@@ -1,9 +1,11 @@
 package com.example.samplegoogleprimer;
 
 import android.os.Bundle;
+import android.provider.SyncStateContract;
 import android.view.View;
 import android.widget.ProgressBar;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,8 +25,9 @@ public class MainActivity extends AppCompatActivity {
     private ApiInterface apiInterface;
     private SampleAdapter adapter;
     private RecyclerView recyclerView;
-    private ProgressBar progressBar;
     private ProgressBar loadingView;
+    private LinearLayoutManager linearlayoutmanager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,15 +35,34 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         init();
         doApiCall();
+        paggination();
+
+    }
+
+    private void paggination() {
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                linearlayoutmanager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                int totalItemCount = linearlayoutmanager.getItemCount();
+                int lastVisibleItemPosition = linearlayoutmanager.findLastVisibleItemPosition();
+                if (dy > 3 && lastVisibleItemPosition == totalItemCount - 1 ) {
+                    loadingView.setVisibility(View.VISIBLE);
+                    doApiCall();
+                }
+
+            }
+        });
     }
 
     private void init() {
         recyclerView = findViewById(R.id.recyclerView);
-        progressBar = findViewById(R.id.progressBar);
         loadingView = findViewById(R.id.loadingView);
         apiInterface = APIClient.getClient().create(ApiInterface.class);
         adapter = new SampleAdapter();
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        linearlayoutmanager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(linearlayoutmanager);
         recyclerView.setAdapter(adapter);
     }
 
@@ -51,8 +73,6 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call<String> call, Response<String> response) {
                 SampleResponse sampleResponse = new Gson().fromJson(response.body().replaceFirst("/", ""), SampleResponse.class);
                 recyclerView.setVisibility(View.VISIBLE);
-                progressBar.setVisibility(View.VISIBLE);
-                progressBar.setMax(sampleResponse.data.size());
                 adapter.update(sampleResponse.data);
                 loadingView.setVisibility(View.GONE);
             }

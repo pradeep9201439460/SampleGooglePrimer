@@ -22,7 +22,6 @@ public class SampleAdapter extends RecyclerView.Adapter<SampleAdapter.SampleView
     }
 
     public void update(List<SampleData> sampleDataList) {
-        this.sampleDataList.clear();
         this.sampleDataList.addAll(sampleDataList);
         notifyDataSetChanged();
     }
